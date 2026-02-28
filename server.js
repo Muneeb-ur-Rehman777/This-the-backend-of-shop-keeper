@@ -36,18 +36,37 @@ app.post('/add', (req, res) => {
     id: id,
     status: status
   }
-  customers.push(customer)
-  res.status(200).json({
-    message: "customer saved"
-  })
+  
 
+  for (let item of groceries) {
+    for (let order of customer.order) {
+      if (order.name == item.name) {
+        if (order.quantity < item.quantity) {
+          item.quantity -= order.quantity;
+          customers.push(customer)
+
+        }
+        else if (order.quantity = item.quantity) {
+          item.quantity -= order.quantity; 
+          item.isPresent = false;
+          customers.push(customer)
+
+        }
+        else {
+          res.status(404).json({ message: "Insufficent item please reduce the quantity or choose another stuff" })
+        }
+      }
+    }
+  }
+
+ 
 })
 
 app.get('/sales', (req, res) => {
 
   const sum = customers.reduce((acc, el) => acc + Number(el.price), 0);
   res.status(200).json(sum)
-  
+
 })
 
 app.get('/pending', (req, res) => {
@@ -66,54 +85,78 @@ app.get('/vip', (req, res) => {
 })
 
 app.post('/pendingPost', (req, res) => {
-  
-  const {date} = req.body;
-  let da = customers.filter((obj)=>{return obj.date == (date)})
+
+  const { date } = req.body;
+  let da = customers.filter((obj) => { return obj.date == (date) })
 
   let pendedorders = da.filter((obj) => { return obj.status == "Pending" })
   res.status(200).json(pendedorders)
 })
 app.post('/vipPost', (req, res) => {
-  
-  const {date} = req.body;
-  let da = customers.filter((obj)=>{return obj.date == (date)})
+
+  const { date } = req.body;
+  let da = customers.filter((obj) => { return obj.date == (date) })
   let vips = da.filter((obj) => { return obj.price >= 5000 })
   res.status(200).json(vips)
 
-  
+
 })
-app.post('/specific',(req,res)=>{
-  
-  const {date} = req.body;
-  let da = customers.filter((obj)=>{return obj.date == (date)})
-  
-  
+app.post('/specific', (req, res) => {
+
+  const { date } = req.body;
+  let da = customers.filter((obj) => { return obj.date == (date) })
+
+
   res.status(200).json(da)
 
 })
 
 
-app.get('/productsData',(req,res)=>{
+app.get('/availableProductsData', (req, res) => {
+  let availableItems = groceries.filter((obj) => { return obj.isPresent })
+
+  res.status(200).json(availableItems);
+})
+
+app.get('/productsData', (req, res) => {
+
+
   res.status(200).json(groceries);
 })
 
 
-app.post('/addProductsData',(req,res)=>{
-  const{name,price,category,quantity,isPresent}=req.body
+app.post('/addProductsData', (req, res) => {
+  const { name, price, category, quantity, isPresent } = req.body
   let item = {
-    name:name,
-    price:price,
-    category:category,
-    quantity:quantity,
-    isPresent:isPresent
+    name: name,
+    price: price,
+    category: category,
+    quantity: quantity,
+    isPresent: isPresent
   }
 
   groceries.push(item)
   res.status(200).json({
-    message:"Product saved"
+    message: "Product saved"
   })
 })
 
+app.post('/giveDataOfProducts', (req, res) => {
+
+  const { name, value } = req.body;
+
+
+  for (let items of groceries) {
+    if (items.name == value) {
+      items.quantity = items.quantity - 1;
+    }
+  }
+
+  res.status(200).json({ message: "Change Saved" })
+
+
+
+})
 
 
 
