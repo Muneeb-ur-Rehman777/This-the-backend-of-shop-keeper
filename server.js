@@ -21,10 +21,10 @@ app.post('/add', (req, res) => {
     number,
     date,
     order,
-    price,
     status,
     id
   } = req.body;
+  let pr = order.reduce((sum, item) => sum + item.price, 0)
 
   let customer = {
     name: name,
@@ -32,34 +32,39 @@ app.post('/add', (req, res) => {
     number: number,
     date: date,
     order: order,
-    price: price,
+    price: pr,
     id: id,
     status: status
   }
-  
 
-  for (let item of groceries) {
-    for (let order of customer.order) {
-      if (order.name == item.name) {
-        if (order.quantity < item.quantity) {
-          item.quantity -= order.quantity;
-          customers.push(customer)
-
-        }
-        else if (order.quantity = item.quantity) {
-          item.quantity -= order.quantity; 
-          item.isPresent = false;
-          customers.push(customer)
-
-        }
-        else {
-          res.status(404).json({ message: "Insufficent item please reduce the quantity or choose another stuff" })
-        }
-      }
+  for (let orderItem of order) {
+    const isAvailable = groceries.find((item) => (item.name == orderItem.name))
+    if (!isAvailable) {
+      return res.status(400).json({ message: "Item not found" })
+    }
+    if (orderItem.quantity > isAvailable.quantity) {
+      return res.status(400).json({ message: "Insufficent amount" })
     }
   }
 
- 
+  for (let orderItem of order) {
+    const isAvailable = groceries.find((item) => (item.name == orderItem.name))
+    isAvailable.quantity -= orderItem.quantity
+    if (isAvailable.quantity == 0) {
+      isAvailable.isPresent = false;
+    }
+  }
+
+
+  customers.push(customer)
+  res.status(200).json({ message: "Order Saved" })
+
+
+
+
+
+
+
 })
 
 app.get('/sales', (req, res) => {
@@ -116,6 +121,7 @@ app.get('/availableProductsData', (req, res) => {
   let availableItems = groceries.filter((obj) => { return obj.isPresent })
 
   res.status(200).json(availableItems);
+
 })
 
 app.get('/productsData', (req, res) => {
@@ -158,6 +164,15 @@ app.post('/giveDataOfProducts', (req, res) => {
 
 })
 
+
+app.get('/getParticularData/:id', (req, res) => {
+  const id = req.params.id
+  const particularOrder = customers.find((item) => (item.id == id));
+  if (!particularOrder) {
+    return res.status(404).json({ message: "Order not available in Data Base" })
+  }
+  res.status(200).json(particularOrder)
+})
 
 
 
