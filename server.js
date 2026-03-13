@@ -2,10 +2,54 @@ const express = require('express')
 const app = express()
 const port = 3000
 const cors = require('cors')
+const mongoose = require('mongoose')
 
 app.use(express.json());
 app.use(cors());
 
+//connect to mongodb
+mongoose.connect('mongodb://127.0.0.1:27017', {
+}).then(() => {
+  console.log("Connected succesfully")
+}).catch((err) => {
+  console.log("not connected", err)
+})
+
+// schema of order
+const orderSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  number: Number,
+  date: String,
+  order: Array,
+  price: Number,
+  id: Number,
+  status: String
+
+})
+// collection
+const collectionOfOrder = mongoose.model("order", orderSchema)
+
+
+// schema for products
+const products = new mongoose.Schema({
+  products: Array
+})
+
+// collection
+const collectionOfProducts = mongoose.model("Products", products)
+
+app.get('/addpre', async (req, res) => {
+  try {
+    const o = new collectionOfOrder({
+      products: gro
+    })
+    await o.save();
+  }
+  catch (err) {
+    res.status(200).json({ message: "There is and error", err })
+  }
+})
 
 let customers = []
 
@@ -15,27 +59,15 @@ app.get('/dash', (req, res) => {
 
 
 
-app.post('/add', (req, res) => {
-  const { name,
-    email,
-    number,
-    date,
-    order,
-    status,
-    id
-  } = req.body;
-  let pr = order.reduce((sum, item) => sum + item.price, 0)
+app.post('/add', async (req, res) => {
+  const { name,email,number,date,order,status,id} = req.body;
 
-  let customer = {
-    name: name,
-    email: email,
-    number: number,
-    date: date,
-    order: order,
-    price: pr,
-    id: id,
-    status: status
-  }
+  let pr = order.reduce((sum, item) => sum + item.price, 0)
+  
+  const objOfProduct = await collectionOfProducts.find({})
+  const objOfProductJSONFORM = objOfProduct.toObject()
+  const groceries = objOfProductJSONFORM.products
+
 
   for (let orderItem of order) {
     const isAvailable = groceries.find((item) => (item.name == orderItem.name))
@@ -49,23 +81,28 @@ app.post('/add', (req, res) => {
 
   for (let orderItem of order) {
     const isAvailable = groceries.find((item) => (item.name == orderItem.name))
-    isAvailable.quantity -= orderItem.quantity
+    await collectionOfProducts.updateOne({ _id: objOfProductJSONFORM.products._id }, { $set: { products: groceries.map((obj) => (obj.name == orderItem.name ? obj.quantity -= orderItem.quantity : obj)) } })
     if (isAvailable.quantity == 0) {
-      isAvailable.isPresent = false;
+      await collectionOfProducts.updateOne({ _id: objOfProductJSONFORM.products._id }, { $set: { products: groceries.map((obj) => (obj.name == orderItem.name ? obj.isPresent = false : obj)) } })
     }
   }
 
-
-  customers.push(customer)
+  const orderObj = new collectionOfOrder({
+    name: name,
+    email: email,
+    number: number,
+    date: date,
+    order: order,
+    price: pr,
+    id: id,
+    status: status
+  })
+  await orderObj.save()
   res.status(200).json({ message: "Order Saved" })
-
-
-
-
-
-
-
 })
+
+
+
 
 app.get('/sales', (req, res) => {
 
@@ -205,7 +242,7 @@ app.get('/getParticularData/:id', (req, res) => {
 
 
 
-const groceries = [
+const gro = [
   // Grains & Flour
   { id: 21, name: "Maida (1kg)", category: "Grains", price: 170, isPresent: true, quantity: 40 },
   { id: 22, name: "Corn Flour (1kg)", category: "Grains", price: 220, isPresent: true, quantity: 35 },
