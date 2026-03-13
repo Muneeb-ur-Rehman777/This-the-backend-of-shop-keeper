@@ -7,239 +7,6 @@ const mongoose = require('mongoose')
 app.use(express.json());
 app.use(cors());
 
-//connect to mongodb
-mongoose.connect('mongodb://127.0.0.1:27017', {
-}).then(() => {
-  console.log("Connected succesfully")
-}).catch((err) => {
-  console.log("not connected", err)
-})
-
-// schema of order
-const orderSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  number: Number,
-  date: String,
-  order: Array,
-  price: Number,
-  id: Number,
-  status: String
-
-})
-// collection
-const collectionOfOrder = mongoose.model("order", orderSchema)
-
-
-// schema for products
-const products = new mongoose.Schema({
-  products: Array
-})
-
-// collection
-const collectionOfProducts = mongoose.model("Products", products)
-
-app.get('/addpre', async (req, res) => {
-  try {
-    const o = new collectionOfOrder({
-      products: gro
-    })
-    await o.save();
-  }
-  catch (err) {
-    res.status(200).json({ message: "There is and error", err })
-  }
-})
-
-let customers = []
-
-app.get('/dash', (req, res) => {
-  res.status(200).json(customers)
-})
-
-
-
-app.post('/add', async (req, res) => {
-  const { name,email,number,date,order,status,id} = req.body;
-
-  let pr = order.reduce((sum, item) => sum + item.price, 0)
-  
-  const objOfProduct = await collectionOfProducts.find({})
-  const objOfProductJSONFORM = objOfProduct.toObject()
-  const groceries = objOfProductJSONFORM.products
-
-
-  for (let orderItem of order) {
-    const isAvailable = groceries.find((item) => (item.name == orderItem.name))
-    if (!isAvailable) {
-      return res.status(400).json({ message: "Item not found" })
-    }
-    if (orderItem.quantity > isAvailable.quantity) {
-      return res.status(400).json({ message: "Insufficent amount" })
-    }
-  }
-
-  for (let orderItem of order) {
-    const isAvailable = groceries.find((item) => (item.name == orderItem.name))
-    await collectionOfProducts.updateOne({ _id: objOfProductJSONFORM.products._id }, { $set: { products: groceries.map((obj) => (obj.name == orderItem.name ? obj.quantity -= orderItem.quantity : obj)) } })
-    if (isAvailable.quantity == 0) {
-      await collectionOfProducts.updateOne({ _id: objOfProductJSONFORM.products._id }, { $set: { products: groceries.map((obj) => (obj.name == orderItem.name ? obj.isPresent = false : obj)) } })
-    }
-  }
-
-  const orderObj = new collectionOfOrder({
-    name: name,
-    email: email,
-    number: number,
-    date: date,
-    order: order,
-    price: pr,
-    id: id,
-    status: status
-  })
-  await orderObj.save()
-  res.status(200).json({ message: "Order Saved" })
-})
-
-
-
-
-app.get('/sales', (req, res) => {
-
-  const sum = customers.reduce((acc, el) => acc + Number(el.price), 0);
-  res.status(200).json(sum)
-
-})
-
-app.get('/pending', (req, res) => {
-  let pendedorders = customers.filter((obj) => { return obj.status == "Pending" })
-  res.status(200).json(pendedorders)
-})
-
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
-
-
-app.get('/vip', (req, res) => {
-  let vips = customers.filter((obj) => { return obj.price >= 5000 })
-  res.status(200).json(vips)
-})
-
-app.post('/pendingPost', (req, res) => {
-
-  const { date } = req.body;
-  let da = customers.filter((obj) => { return obj.date == (date) })
-
-  let pendedorders = da.filter((obj) => { return obj.status == "Pending" })
-  res.status(200).json(pendedorders)
-})
-app.post('/vipPost', (req, res) => {
-
-  const { date } = req.body;
-  let da = customers.filter((obj) => { return obj.date == (date) })
-  let vips = da.filter((obj) => { return obj.price >= 5000 })
-  res.status(200).json(vips)
-
-
-})
-app.post('/specific', (req, res) => {
-
-  const { date } = req.body;
-  let da = customers.filter((obj) => { return obj.date == (date) })
-
-
-  res.status(200).json(da)
-
-})
-
-
-app.get('/availableProductsData', (req, res) => {
-  let availableItems = groceries.filter((obj) => { return obj.isPresent })
-
-  res.status(200).json(availableItems);
-
-})
-
-app.get('/productsData', (req, res) => {
-
-
-  res.status(200).json(groceries);
-})
-
-
-app.post('/addProductsData', (req, res) => {
-  const { name, price, category, quantity, isPresent } = req.body
-  let item = {
-    name: name,
-    price: price,
-    category: category,
-    quantity: quantity,
-    isPresent: isPresent
-  }
-
-  groceries.push(item)
-  res.status(200).json({
-    message: "Product saved"
-  })
-})
-
-app.post('/giveDataOfProducts', (req, res) => {
-
-  const { name, value } = req.body;
-
-
-  for (let items of groceries) {
-    if (items.name == value) {
-      items.quantity = items.quantity - 1;
-    }
-  }
-
-  res.status(200).json({ message: "Change Saved" })
-
-
-
-})
-
-
-app.get('/getParticularData/:id', (req, res) => {
-  const id = req.params.id
-  const particularOrder = customers.find((item) => (item.id == id));
-  if (!particularOrder) {
-    return res.status(404).json({ message: "Order not available in Data Base" })
-  }
-  res.status(200).json(particularOrder)
-})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 const gro = [
@@ -293,3 +60,278 @@ const gro = [
   { id: 49, name: "Face Wash", category: "Personal Care", price: 450, isPresent: true, quantity: 30 },
   { id: 50, name: "Hand Wash", category: "Personal Care", price: 250, isPresent: false, quantity: 0 }
 ];
+
+//connect to mongodb
+mongoose.connect('mongodb://127.0.0.1:27017', {
+}).then(() => {
+  console.log("Connected succesfully")
+}).catch((err) => {
+  console.log("not connected", err)
+})
+
+// schema of order
+const orderSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  number: Number,
+  date: String,
+  order: Array,
+  price: Number,
+  id: Number,
+  status: String
+
+})
+// collection
+const collectionOfOrder = mongoose.model("order", orderSchema)
+
+
+// schema for products
+const products = new mongoose.Schema({
+  products: Array
+})
+
+// collection
+const collectionOfProducts = mongoose.model("Products", products)
+
+
+
+
+
+
+
+
+
+
+
+
+// by default on dashboard(main page)
+app.get('/sales', async (req, res) => {
+
+  let data = await collectionOfOrder.find({})
+  if (data.length > 0) {
+    let sum = data.reduce((prev, current) => (prev + Number(current.price)), 0)
+    return res.status(200).json(sum)
+  }
+  return res.status(200).json(0)
+
+})
+
+app.get('/productsData', async (req, res) => {
+  try {
+    let data = await collectionOfProducts.find({})
+    console.log(data)
+    if (!data.length > 0) {
+      let document = new collectionOfProducts({
+        products: gro
+      })
+      await document.save()
+    }
+    let data1 = await collectionOfProducts.find({})
+    let groceries = data1[0].products
+    res.status(200).json(groceries);
+  }
+  catch (err) {
+    res.status(500).json({ message: "There is an error to get all products" })
+  }
+
+
+})
+
+app.get('/dash', async (req, res) => {
+  let customers = await collectionOfOrder.find({})
+  if (customers.length > 0) {
+    return res.status(200).json(customers)
+  }
+  return []
+
+})
+
+// on click in dashboard(main page)
+app.get('/getParticularData/:id', async (req, res) => {
+  const id = req.params.id
+  let customers = await collectionOfOrder.find({})
+
+  const particularOrder = customers.find((item) => (item.id == Number(id)));
+  if (!particularOrder) {
+    return res.status(404).json({ message: "Order not available in Data Base" })
+  }
+  res.status(200).json(particularOrder)
+})
+
+
+
+
+
+// by default on add
+app.get('/availableProductsData', async (req, res) => {
+  try {
+    let data1 = await collectionOfProducts.find({})
+    let groceries = data1[0].products
+
+    let availableItems = groceries.filter((obj) => { return obj.isPresent })
+    res.status(200).json(availableItems);
+  }
+  catch (err) {
+    res.status(200).json(err)
+  }
+})
+
+// on click in add order page
+app.post('/add', async (req, res) => {
+  const { name, email, number, date, order, status, id } = req.body;
+
+  let pr = order.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+
+
+  const allProducts = await collectionOfProducts.find({})
+  const groceries = allProducts[0].products.filter((obj) => (obj.isPresent))
+
+
+  for (let orderItem of order) {
+    const isAvailable = groceries.find((item) => (item.name == orderItem.name))
+    if (!isAvailable) {
+      return res.status(400).json({ message: "Item not found", itemName: orderItem.name })
+    }
+    if (orderItem.quantity > isAvailable.quantity) {
+      return res.status(400).json({ message: "Insufficent amount", quantityRemain: isAvailable.quantity })
+    }
+  }
+  let a = await collectionOfProducts.find({})
+  let all = a[0].products
+
+  for (let orderItem of order) {
+    const isAvailable = groceries.find((item) => (item.name == orderItem.name))
+    await collectionOfProducts.updateOne({ _id: allProducts._id }, { $set: { products: all.map((obj) => (obj.name == orderItem.name ? obj.quantity -= orderItem.quantity : obj)) } })
+    if (isAvailable.quantity == 0) {
+      await collectionOfProducts.updateOne({ _id: allProducts._id }, { $set: { products: all.map((obj) => (obj.name == orderItem.name ? obj.isPresent = false : obj)) } })
+    }
+  }
+
+  const orderObj = new collectionOfOrder({
+    name: name,
+    email: email,
+    number: number,
+    date: date,
+    order: order,
+    price: pr,
+    id: id,
+    status: status
+  })
+  await orderObj.save()
+  res.status(200).json({ message: "Order Saved" })
+})
+
+
+
+
+
+
+//by default on customer 
+app.get('/vip', async (req, res) => {
+  let customers = await collectionOfOrder.find({})
+  let vips = customers.filter((obj) => { return obj.price >= 5000 })
+  res.status(200).json(vips)
+})
+
+app.get('/pending', async (req, res) => {
+  let customers = await collectionOfOrder.find({})
+  let pendedorders = customers.filter((obj) => { return obj.status == "Pending" })
+  res.status(200).json(pendedorders)
+})
+
+// on click on pending page
+app.post('/pendingPost', async (req, res) => {
+  const { date } = req.body;
+  let customres = await collectionOfOrder.find({})
+  let da = customres.filter((obj) => { return obj.date == (date) })
+  let pendedorders = da.filter((obj) => { return obj.status == "Pending" })
+  res.status(200).json(pendedorders)
+})
+
+// on click on vip page
+app.post('/vipPost', async (req, res) => {
+  const { date } = req.body;
+  let customers = await collectionOfOrder.find({})
+  let da = customers.filter((obj) => { return obj.date == (date) })
+  let vips = da.filter((obj) => { return obj.price >= 5000 })
+  res.status(200).json(vips)
+})
+
+
+
+
+
+// by click on order page
+app.post('/specificDate', async (req, res) => {
+  const date = req.body.date;
+  let customres = await collectionOfOrder.find({})
+  let da = customres.filter((obj) => { return obj.date == (date) })
+  res.status(200).json(da)
+})
+
+
+
+//schema
+// mongoose.Schema()
+
+
+// by click or  add on addproducts page
+app.post('/addProductsData', async (req, res) => {
+  const { name, price, category, quantity, isPresent } = req.body
+  let products = await collectionOfProducts.find({})
+  let items = products[0].products
+  let item = {
+    name: name,
+    price: price,
+    category: category,
+    quantity: quantity,
+    isPresent: isPresent
+  }
+  items.push(item)
+  console.log(items)
+  await collectionOfProducts.updateOne({_id:products[0]._id}, { $set: { products: items } })
+  res.status(200).json({ message: "Product saved" })
+  console.log("ok report")
+})
+
+
+
+
+
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`)
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
